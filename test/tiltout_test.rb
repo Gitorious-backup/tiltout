@@ -73,6 +73,14 @@ describe Tiltout do
     assert_equal "I give you: Template", renderer.render(:file)
   end
 
+  it "renders template with layout not in template root" do
+    renderer = Tiltout.new("/somewhere", :layout => { :file => "/my/layout.erb" })
+    File.stubs(:read).with("/somewhere/file.erb").returns("Template")
+    File.stubs(:read).with("/my/layout.erb").returns("I give you: <%= yield %>")
+
+    assert_equal "I give you: Template", renderer.render(:file)
+  end
+
   it "renders template once without layout" do
     renderer = Tiltout.new("/", :layout => "layout")
     File.stubs(:read).with("/file.erb").returns("Template")

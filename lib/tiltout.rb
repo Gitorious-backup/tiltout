@@ -25,7 +25,7 @@
 require "tilt"
 
 class Tiltout
-  VERSION = "1.0.0"
+  VERSION = "1.1.0"
 
   def initialize(template_root, opt = {})
     @template_root = template_root
@@ -62,6 +62,7 @@ class Tiltout
   end
 
   def find_file(name)
+    return name[:file] if name.is_a?(Hash)
     full_name = File.join(@template_root, name.to_s)
     return full_name if cached?(full_name) || File.exists?(full_name)
     File.join(@template_root, "#{name}.#{@default_type}")
