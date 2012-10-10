@@ -23,10 +23,9 @@
 # SOFTWARE.
 #++
 require "tilt"
+require "tiltout/version"
 
 class Tiltout
-  VERSION = "1.1.0"
-
   def initialize(template_root, opt = {})
     @template_root = template_root
     @cache = {} if !opt.key?(:cache) || opt[:cache]
