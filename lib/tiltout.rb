@@ -32,6 +32,7 @@ class Tiltout
     @layout = opt[:layout]
     @default_type = opt[:default_type] || "erb"
     @context_class = Class.new
+    (opt[:helpers] || []).each { |h| helper(h) }
   end
 
   def helper(helper)

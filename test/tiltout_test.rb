@@ -134,6 +134,13 @@ describe Tiltout do
     assert_equal "Say it: YES", renderer.render(:file)
   end
 
+  it "creates with helper object" do
+    renderer = Tiltout.new("/", :helpers => [ViewHelper])
+    fake_file("/file.erb", "Say it: <%= say_it %>")
+
+    assert_equal "Say it: YES", renderer.render(:file)
+  end
+
   it "does not leak state across render calls" do
     renderer = Tiltout.new("/")
     fake_file("/file.erb", <<-TEMPLATE)
