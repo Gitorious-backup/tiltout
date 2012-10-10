@@ -34,14 +34,23 @@ end
 describe Tiltout do
   before { @root = "/dolt/views" }
 
+  def file_read
+    File.respond_to?(:binread) ? :binread : :read
+  end
+
+  def fake_file(file, content)
+    File.stubs(:file_exists?).with(file).returns(true)
+    File.stubs(file_read).with(file).returns(content)
+  end
+
   it "reads template from file" do
-    File.expects(:read).with("/dolt/views/file.erb").returns("")
+    File.expects(file_read).with("/dolt/views/file.erb").returns("")
     renderer = Tiltout.new("/dolt/views")
     renderer.render(:file)
   end
 
   it "renders template with locals" do
-    File.stubs(:read).returns("<%= name %>!")
+    fake_file("#{@root}/file.erb", "<%= name %>!")
     renderer = Tiltout.new(@root)
 
     assert_equal "Chris!", renderer.render(:file, { :name => "Chris"})
@@ -49,51 +58,51 @@ describe Tiltout do
 
   it "caches template in memory" do
     renderer = Tiltout.new(@root)
-    File.stubs(:read).returns("Original")
+    fake_file("#{@root}/file.erb", "Original")
     renderer.render(:file)
-    File.stubs(:read).returns("Updated")
+    fake_file("#{@root}/file.erb", "Updated")
 
     assert_equal "Original", renderer.render(:file)
   end
 
   it "does not cache template in memory when configured not to" do
     renderer = Tiltout.new(@root, :cache => false)
-    File.stubs(:read).returns("Original")
+    fake_file("#{@root}/file.erb", "Original")
     renderer.render(:file)
-    File.stubs(:read).returns("Updated")
+    fake_file("#{@root}/file.erb", "Updated")
 
     assert_equal "Updated", renderer.render(:file)
   end
 
   it "renders template with layout" do
     renderer = Tiltout.new("/", :layout => "layout")
-    File.stubs(:read).with("/file.erb").returns("Template")
-    File.stubs(:read).with("/layout.erb").returns("I give you: <%= yield %>")
+    fake_file("/file.erb", "Template")
+    fake_file("/layout.erb", "I give you: <%= yield %>")
 
     assert_equal "I give you: Template", renderer.render(:file)
   end
 
   it "renders template with layout not in template root" do
     renderer = Tiltout.new("/somewhere", :layout => { :file => "/my/layout.erb" })
-    File.stubs(:read).with("/somewhere/file.erb").returns("Template")
-    File.stubs(:read).with("/my/layout.erb").returns("I give you: <%= yield %>")
+    fake_file("/somewhere/file.erb", "Template")
+    fake_file("/my/layout.erb", "I give you: <%= yield %>")
 
     assert_equal "I give you: Template", renderer.render(:file)
   end
 
   it "renders template once without layout" do
     renderer = Tiltout.new("/", :layout => "layout")
-    File.stubs(:read).with("/file.erb").returns("Template")
-    File.stubs(:read).with("/layout.erb").returns("I give you: <%= yield %>")
+    fake_file("/file.erb", "Template")
+    fake_file("/layout.erb", "I give you: <%= yield %>")
 
     assert_equal "Template", renderer.render(:file, {}, :layout => nil)
   end
 
   it "renders template once with different layout" do
     renderer = Tiltout.new("/", :layout => "layout")
-    File.stubs(:read).with("/file.erb").returns("Template")
-    File.stubs(:read).with("/layout.erb").returns("I give you: <%= yield %>")
-    File.stubs(:read).with("/layout2.erb").returns("I present you: <%= yield %>")
+    fake_file("/file.erb", "Template")
+    fake_file("/layout.erb", "I give you: <%= yield %>")
+    fake_file("/layout2.erb", "I present you: <%= yield %>")
 
     html = renderer.render(:file, {}, :layout => "layout2")
 
@@ -102,15 +111,15 @@ describe Tiltout do
 
   it "renders templates of default type" do
     renderer = Tiltout.new("/", :default_type => :str)
-    File.stubs(:read).with("/file.str").returns("Hey!")
+    fake_file("/file.str", "Hey!")
 
     assert_equal "Hey!", renderer.render(:file)
   end
 
   it "renders templates of specific type" do
     renderer = Tiltout.new("/", :default_type => :lol)
-    File.stubs(:read).with("/file.lol").returns("No!")
-    File.stubs(:read).with("/file.erb").returns("Yes!")
+    fake_file("/file.lol", "No!")
+    fake_file("/file.erb", "Yes!")
     File.stubs(:exists?).with("/file.lol").returns(false)
     File.stubs(:exists?).with("/file.erb").returns(true)
 
@@ -120,14 +129,14 @@ describe Tiltout do
   it "renders with helper object" do
     renderer = Tiltout.new("/")
     renderer.helper(ViewHelper)
-    File.stubs(:read).with("/file.erb").returns("Say it: <%= say_it %>")
+    fake_file("/file.erb", "Say it: <%= say_it %>")
 
     assert_equal "Say it: YES", renderer.render(:file)
   end
 
   it "does not leak state across render calls" do
     renderer = Tiltout.new("/")
-    File.stubs(:read).with("/file.erb").returns(<<-TEMPLATE)
+    fake_file("/file.erb", <<-TEMPLATE)
 <%= @response %><% @response = "NO" %><%= @response %>
     TEMPLATE
 
@@ -137,11 +146,10 @@ describe Tiltout do
 
   it "shares state between template and layout" do
     renderer = Tiltout.new("/", :layout => "layout")
-    File.stubs(:read).with("/file.erb").returns(<<-TEMPLATE)
-<% @response = "NO" %><h1><%= @response %></h1>
+    fake_file("/file.erb", <<-TEMPLATE)
+<h1><%= @response %><% @response = "NO" %><%= @response %></h1>
     TEMPLATE
-    tpl = "<title><%= @response %></title><%= yield %>"
-    File.stubs(:read).with("/layout.erb").returns(tpl)
+    fake_file("/layout.erb", "<title><%= @response %></title><%= yield %>")
 
     assert_equal "<title>NO</title><h1>NO</h1>\n", renderer.render(:file)
   end
