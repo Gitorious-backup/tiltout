@@ -24,6 +24,7 @@
 #++
 require "tilt"
 require "tiltout/version"
+require "tiltout/partials"
 
 class Tiltout
   def initialize(template_root, opt = {})
@@ -42,14 +43,20 @@ class Tiltout
 
   def render(template, locals = {}, options = {})
     context = @context_class.new
-    content = load(template).render(context, locals)
+    context.renderer = self if context.respond_to?(:renderer=)
+    content = render_in_context(context, template, locals)
     layout_tpl = options.key?(:layout) ? options[:layout] : @layout
 
     if !layout_tpl.nil?
-      content = load(layout_tpl).render(context, locals) { content }
+      content = render_in_context(context, layout_tpl, locals) { content }
+      #content = load(layout_tpl).render(context, locals) { content }
     end
 
     content
+  end
+
+  def render_in_context(context, template, locals, &block)
+    load(template).render(context, locals, &block)
   end
 
   private

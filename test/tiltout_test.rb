@@ -50,10 +50,12 @@ describe Tiltout do
   end
 
   it "renders template with locals" do
-    fake_file("#{@root}/file.erb", "<%= name %>!")
+    fake_file("#{@root}/file.erb", <<-ERB)
+<%= name %>!
+    ERB
     renderer = Tiltout.new(@root)
 
-    assert_equal "Chris!", renderer.render(:file, { :name => "Chris"})
+    assert_equal "Chris!\n", renderer.render(:file, { :name => "Chris"})
   end
 
   it "caches template in memory" do
@@ -77,23 +79,29 @@ describe Tiltout do
   it "renders template with layout" do
     renderer = Tiltout.new("/", :layout => "layout")
     fake_file("/file.erb", "Template")
-    fake_file("/layout.erb", "I give you: <%= yield %>")
+    fake_file("/layout.erb", <<-ERB)
+I give you: <%= yield %>
+    ERB
 
-    assert_equal "I give you: Template", renderer.render(:file)
+    assert_equal "I give you: Template\n", renderer.render(:file)
   end
 
   it "renders template with layout not in template root" do
     renderer = Tiltout.new("/somewhere", :layout => { :file => "/my/layout.erb" })
     fake_file("/somewhere/file.erb", "Template")
-    fake_file("/my/layout.erb", "I give you: <%= yield %>")
+    fake_file("/my/layout.erb", <<-ERB)
+I give you: <%= yield %>
+    ERB
 
-    assert_equal "I give you: Template", renderer.render(:file)
+    assert_equal "I give you: Template\n", renderer.render(:file)
   end
 
   it "renders template once without layout" do
     renderer = Tiltout.new("/", :layout => "layout")
     fake_file("/file.erb", "Template")
-    fake_file("/layout.erb", "I give you: <%= yield %>")
+    fake_file("/layout.erb", <<-ERB)
+I give you: <%= yield %>
+    ERB
 
     assert_equal "Template", renderer.render(:file, {}, :layout => nil)
   end
@@ -101,12 +109,16 @@ describe Tiltout do
   it "renders template once with different layout" do
     renderer = Tiltout.new("/", :layout => "layout")
     fake_file("/file.erb", "Template")
-    fake_file("/layout.erb", "I give you: <%= yield %>")
-    fake_file("/layout2.erb", "I present you: <%= yield %>")
+    fake_file("/layout.erb", <<-ERB)
+I give you: <%= yield %>
+    ERB
+    fake_file("/layout2.erb", <<-ERB)
+I present you: <%= yield %>
+    ERB
 
     html = renderer.render(:file, {}, :layout => "layout2")
 
-    assert_equal "I present you: Template", html
+    assert_equal "I present you: Template\n", html
   end
 
   it "renders templates of default type" do
@@ -163,5 +175,30 @@ Say it: <%= say_it %>
     fake_file("/layout.erb", "<title><%= @response %></title><%= yield %>")
 
     assert_equal "<title>NO</title><h1>NO</h1>\n", renderer.render(:file)
+  end
+
+  describe "partials" do
+    it "renders partial" do
+      renderer = Tiltout.new("/", :helpers => [Tiltout::Partials])
+      fake_file("/part.erb", "I'm partial")
+      fake_file("/file.erb", <<-TEMPLATE)
+<%= partial(:part) %>!
+      TEMPLATE
+
+      assert_equal "I'm partial!\n", renderer.render(:file)
+    end
+
+    it "renders partial in template context" do
+      renderer = Tiltout.new("/", :helpers => [Tiltout::Partials])
+      fake_file("/part.erb", <<-ERB)
+<%= @name %> is partial
+      ERB
+      fake_file("/file.erb", <<-TEMPLATE)
+<% @name = "Chris" %>
+<%= partial(:part) %>
+      TEMPLATE
+
+      assert_equal "Chris is partial\n", renderer.render(:file)
+    end
   end
 end
