@@ -86,6 +86,17 @@ I give you: <%= yield %>
     assert_equal "I give you: Template\n", renderer.render(:file)
   end
 
+  it "renders template not in template root" do
+    renderer = Tiltout.new("/else")
+    fake_file("/somewhere/file.erb", "Template")
+    fake_file("/my/layout.erb", <<-ERB)
+I give you: <%= yield %>
+    ERB
+
+    template = { :file => "/somewhere/file.erb" }
+    assert_equal "Template", renderer.render(template)
+  end
+
   it "renders template with layout not in template root" do
     renderer = Tiltout.new("/somewhere", :layout => { :file => "/my/layout.erb" })
     fake_file("/somewhere/file.erb", "Template")
