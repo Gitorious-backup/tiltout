@@ -1,5 +1,9 @@
 # Tiltout
 
+<a href="http://travis-ci.org/cjohansen/tiltout" class="travis">
+  <img src="https://secure.travis-ci.org/cjohansen/tiltout.png">
+</a>
+
 ## Tilt templates with layouts and helpers
 
 Tiltout is a small abstraction over Tilt that allows you to render templates
