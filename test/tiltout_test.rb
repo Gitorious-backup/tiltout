@@ -168,6 +168,16 @@ Say it: <%= say_it %>
     assert_equal "Say it: YES\n", renderer.render(:file)
   end
 
+  it "uses hash as helper" do
+    renderer = Tiltout.new("/")
+    renderer.helper(:say_it => 42, "do_it" => 12)
+    fake_file("/file.erb", <<-ERB)
+Say it: <%= say_it %>, <%= do_it %>
+    ERB
+
+    assert_equal "Say it: 42, 12\n", renderer.render(:file)
+  end
+
   it "does not leak state across render calls" do
     renderer = Tiltout.new("/")
     fake_file("/file.erb", <<-TEMPLATE)

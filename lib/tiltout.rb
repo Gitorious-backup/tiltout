@@ -33,12 +33,13 @@ class Tiltout
     @layout = opt[:layout]
     @default_type = opt[:default_type] || "erb"
     @context_class = Class.new
-    (opt[:helpers] || []).each { |h| helper(h) }
+    helper(opt[:helpers])
   end
 
-  def helper(helper)
-    helper = [helper] unless Array === helper
-    helper.each { |h| @context_class.send(:include, h) }
+  def helper(helpers)
+    return if helpers.nil?
+    helpers = [helpers] unless helpers.is_a?(Array)
+    helpers.each { |h| @context_class.send(:include, helper_module(h)) }
   end
 
   def render(template, locals = {}, options = {})
@@ -49,7 +50,6 @@ class Tiltout
 
     if !layout_tpl.nil?
       content = render_in_context(context, layout_tpl, locals) { content }
-      #content = load(layout_tpl).render(context, locals) { content }
     end
 
     content
@@ -81,5 +81,13 @@ class Tiltout
 
   def cached?(name)
     @cache && !!@cache[name]
+  end
+
+  def helper_module(mod)
+    return mod if mod.is_a?(Module)
+    mod.keys.inject(Module.new) do |helper, attr|
+      helper.send(:define_method, attr) { mod[attr] }
+      helper
+    end
   end
 end
