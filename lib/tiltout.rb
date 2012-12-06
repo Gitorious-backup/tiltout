@@ -27,8 +27,10 @@ require "tiltout/version"
 require "tiltout/partials"
 
 class Tiltout
+  attr_reader :paths
+
   def initialize(template_root, opt = {})
-    @template_root = template_root
+    @paths = Array(template_root)
     @cache = {} if !opt.key?(:cache) || opt[:cache]
     @layout = opt[:layout]
     @default_type = opt[:default_type] || "erb"
@@ -70,9 +72,13 @@ class Tiltout
 
   def find_file(name)
     return name[:file] if name.is_a?(Hash)
-    full_name = File.join(@template_root, name.to_s)
-    return full_name if cached?(full_name) || File.exists?(full_name)
-    File.join(@template_root, "#{name}.#{@default_type}")
+    paths.each do |path|
+      full_name = File.join(path, name.to_s)
+      return full_name if cached?(full_name) || File.exists?(full_name)
+      full_name = File.join(path, "#{name}.#{@default_type}")
+      return full_name if cached?(full_name) || File.exists?(full_name)
+    end
+    nil
   end
 
   def cache(name, template)

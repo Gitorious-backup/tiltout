@@ -32,19 +32,22 @@ module ViewHelper
 end
 
 describe Tiltout do
-  before { @root = "/dolt/views" }
+  before do
+    @root = "/dolt/views"
+    File.stubs(:exists?).returns(false)
+  end
 
   def file_read
     File.respond_to?(:binread) ? :binread : :read
   end
 
   def fake_file(file, content)
-    File.stubs(:file_exists?).with(file).returns(true)
+    File.stubs(:exists?).with(file).returns(true)
     File.stubs(file_read).with(file).returns(content)
   end
 
   it "reads template from file" do
-    File.expects(file_read).with("/dolt/views/file.erb").returns("")
+    fake_file("/dolt/views/file.erb", "")
     renderer = Tiltout.new("/dolt/views")
     renderer.render(:file)
   end
@@ -220,6 +223,23 @@ Say it: <%= say_it %>, <%= do_it %>
       TEMPLATE
 
       assert_equal "Chris is partial\n", renderer.render(:file)
+    end
+  end
+
+  describe "multiple view paths" do
+    it "uses the first available template" do
+      fake_file("/dolt/views/file.erb", "#1")
+      fake_file("/tlod/views/file.erb", "#2")
+      renderer = Tiltout.new(["/dolt/views", "/tlod/views"])
+
+      assert_equal "#1", renderer.render(:file)
+    end
+
+    it "uses only available template" do
+      fake_file("/tlod/views/file.erb", "#2")
+      renderer = Tiltout.new(["/dolt/views", "/tlod/views"])
+
+      assert_equal "#2", renderer.render(:file)
     end
   end
 end
