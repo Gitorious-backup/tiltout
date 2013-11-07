@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.version     = Tiltout::VERSION
   s.authors     = ["Christian Johansen"]
   s.email       = ["christian@gitorious.org"]
-  s.homepage    = "http://gitorious.org/gitorious/tiltout"
+  s.homepage    = "https://gitorious.org/gitorious/tiltout"
   s.summary     = %q{Tilt templates with layouts and helpers}
   s.description = <<-DESC
 Tiltout is a small abstraction on top of Tilt that allows you to render
