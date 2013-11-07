@@ -37,6 +37,7 @@ Tiltout is a small abstraction on top of Tilt that allows you to render
 templates with optional layouts, share state between layout and template,
 register helper modules and optionally cache templates.
 DESC
+  s.license    = "MIT"
 
   s.add_dependency "tilt", "~>1.3"
 
